@@ -1,4 +1,5 @@
 import express from "express";
+import { Parser } from "json2csv";
 import Car from "../../config.js";
 
 const router = express.Router();
@@ -11,6 +12,48 @@ router.get("/", async (req, res, next) => {
       ...doc.data(),
     }));
     res.status(200).json(cars);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/export", async (req, res, next) => {
+  try {
+    const carsSnapshot = await Car.get();
+    if (carsSnapshot.empty) {
+      throw new Error("No cars found in the database");
+    }
+
+    const cars = carsSnapshot.docs.map((doc) => ({
+      name: doc.data().name,
+      mpg: doc.data().mpg,
+      cylinders: doc.data().cylinders,
+      displacement: doc.data().displacements,
+      horsepower: doc.data().horsepower,
+      weight: doc.data().weight,
+      acceleration: doc.data().acceleration,
+      model_year: doc.data().model_year,
+      origin: doc.data().origin,
+    }));
+
+    const fields = [
+      "name",
+      "mpg",
+      "cylinders",
+      "displacement",
+      "horsepower",
+      "weight",
+      "acceleration",
+      "model_year",
+      "origin",
+    ];
+
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(cars);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("automobiles-data.csv");
+    res.send(csv);
   } catch (error) {
     next(error);
   }
