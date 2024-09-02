@@ -6,6 +6,21 @@ const router = express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
+    const { origin, minMPG } = req.query;
+    let query = Car;
+
+    // Apply filters if present
+    if (origin) {
+      query = query.where("origin", "==", origin);
+    }
+    if (minMPG) {
+      const mpg = parseFloat(minMPG);
+      if (!isNaN(mpg)) {
+        query = query.where("mpg", ">=", mpg);
+      } else {
+        return res.status(400).json({ message: "Invalid minMPG value" });
+      }
+    }
     const carsSnapshot = await Car.get();
     const cars = carsSnapshot.docs.map((doc) => ({
       id: doc.id,
